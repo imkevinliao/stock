@@ -10,7 +10,7 @@ from matplotlib import pyplot as plt
 class ErrorInfo(Exception): ...
 
 
-class AnalyzeStock:
+class Analyze:
     def __init__(self, csvfile, stock_name=""):
         self.csvfile = csvfile
         self.stock_name = stock_name
@@ -65,7 +65,7 @@ class AnalyzeStock:
             plt.show()
 
 
-class DownloadStock:
+class Download:
     def __init__(self, code: list = None, fold: str = None):
         self.__stock_code = code
         self.__save_fold = fold
