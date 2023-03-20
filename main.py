@@ -1,5 +1,14 @@
-from soc import AnalyzeStock
+from soc import Analyze, Download
 
-inst = AnalyzeStock(csvfile="")
-inst.basic_info()
-inst.query_compare(compare_price=0.407, plot=True, start_time="20220316")
+# 个股成分信息 个股信息查询
+# data = ak.index_stock_hist()
+# data = ak.stock_individual_info_em()
+
+# inst = Download(fold=r"D:\github\save")
+
+import akshare as ak
+
+# data = ak.fund_etf_hist_em(symbol="510310")
+ak.fund_etf_fund_info_em()
+ak.fund_etf_hist_sina()
+

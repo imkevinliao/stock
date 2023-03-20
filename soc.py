@@ -7,6 +7,29 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 
+def save_basic_info():
+    fold = "global"
+    if not os.path.exists(fold):
+        os.mkdir(fold)
+    fold_path = os.path.join(os.path.dirname(__file__), fold)
+    # 股票指数-成份股-所有可以获取的指数表
+    data = ak.index_stock_info()
+    filepath = os.path.join(fold_path, "stock_index_info.csv")
+    data.to_csv(filepath)
+    # A 股股票代码和简称
+    data = ak.stock_info_a_code_name()
+    filepath = os.path.join(fold_path, "stock_a_code.csv")
+    data.to_csv(filepath)
+    # 公募基金-基本信息
+    data = ak.fund_name_em()
+    filepath = os.path.join(fold_path, "fund_name.csv")
+    data.to_csv(filepath)
+    # 指数型基金-基本信息
+    data = ak.fund_info_index_em()
+    filepath = os.path.join(fold_path, "fund_info_index.csv")
+    data.to_csv(filepath)
+
+
 class ErrorInfo(Exception): ...
 
 
@@ -99,15 +122,6 @@ class Download:
     def reset_stock_code(self, value):
         self.__stock_code = value
         self.__check_stock_code()
-
-    def download_basic_info(self):
-        # 个股成分信息 个股信息查询
-        # data = ak.index_stock_hist()
-        # data = ak.stock_individual_info_em()
-
-        data = ak.index_stock_info()
-        filepath = os.path.join(self.__save_fold, "index_info.csv")
-        data.to_csv(filepath)
 
     def download(self, time_range=("19700101", "22220101")):
         for stock in self.__stock_code:
