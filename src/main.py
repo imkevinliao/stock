@@ -1,4 +1,5 @@
-from soc import stock_download
+from soc import Analyze
 
 codes = ["000300"]
-stock_download(code=codes)
+inst = Analyze(code=codes[0])
+inst.stock_info()
