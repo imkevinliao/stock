@@ -1,4 +1,4 @@
-from soc import download
+from soc import stock_download
 
 codes = ["000300"]
-download(code=codes)
+stock_download(code=codes)
