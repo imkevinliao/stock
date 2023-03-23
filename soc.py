@@ -1,3 +1,4 @@
+# -*- coding:utf-8 -*-
 import datetime
 import os
 import re
@@ -7,52 +8,26 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 
-def save_basic_info():
-    fold = "global"
-    if not os.path.exists(fold):
-        os.mkdir(fold)
-    fold_path = os.path.join(os.path.dirname(__file__), fold)
-    # 股票指数-成份股-所有可以获取的指数表
-    data = ak.index_stock_info()
-    filepath = os.path.join(fold_path, "stock_index_info.csv")
-    data.to_csv(filepath)
-    # A 股股票代码和简称
-    data = ak.stock_info_a_code_name()
-    filepath = os.path.join(fold_path, "stock_a_code.csv")
-    data.to_csv(filepath)
-    # 公募基金-基本信息
-    data = ak.fund_name_em()
-    filepath = os.path.join(fold_path, "fund_name.csv")
-    data.to_csv(filepath)
-    # 指数型基金-基本信息
-    data = ak.fund_info_index_em()
-    filepath = os.path.join(fold_path, "fund_info_index.csv")
-    data.to_csv(filepath)
-
-
-class ErrorInfo(Exception): ...
-
-
 class Analyze:
     def __init__(self, csvfile, stock_name=""):
         self.csvfile = csvfile
         self.stock_name = stock_name
         self.data = pd.read_csv(self.csvfile)
         self.pretreatment()
-
+    
     def __extract_stock_name(self):
         _, fullname = os.path.split(self.csvfile)
         regex = r"\d{3,8}"
         result = re.findall(regex, fullname)
         if result:
             self.stock_name = result[0]
-
+    
     def pretreatment(self):
         self.data["日期"] = pd.to_datetime(self.data["日期"])
         # 如果没有给定股票代号，那么就尝试从文件名中提取
         if not self.stock_name:
             self.__extract_stock_name()
-
+    
     def basic_info(self):
         data = self.data
         print(f"下面展示文件 {self.csvfile} 的详细数据：{self.stock_name}")
@@ -64,7 +39,7 @@ class Analyze:
         print(f"最高价格一共有 {len(high_price_records)} 条，最高价详细数据：\n{high_price_records}")
         print(f"最低价格一共有 {len(low_price_records)} 条，最低价详细数据：\n{low_price_records}")
         print(f"一共有 {records} 条数据，最高：{high_price}, 最低：{low_price}")
-
+    
     def query_compare(self, compare_price: float, start_time="19700101", end_time="22220101", plot=False):
         s_date = datetime.datetime.strptime(str(start_time), '%Y%m%d').date()
         e_date = datetime.datetime.strptime(str(end_time), '%Y%m%d').date()
@@ -88,51 +63,118 @@ class Analyze:
             plt.show()
 
 
-class Download:
-    def __init__(self, code: list = None, fold: str = None):
-        self.__stock_code = code
-        self.__save_fold = fold
-        self.__pretreatment()
-        ...
+def basic_info():
+    basic_path = os.path.dirname(__file__)
+    fold_path = os.path.join(basic_path, "global")
+    if not os.path.exists(fold_path):
+        os.mkdir(fold_path)
+    # 股票指数-成份股-所有可以获取的指数表
+    data = ak.index_stock_info()
+    filepath = os.path.join(fold_path, "stock_index_info.csv")
+    data.to_csv(filepath)
+    # A 股股票代码和简称
+    data = ak.stock_info_a_code_name()
+    filepath = os.path.join(fold_path, "stock_a_code.csv")
+    data.to_csv(filepath)
+    # 公募基金-基本信息
+    data = ak.fund_name_em()
+    filepath = os.path.join(fold_path, "fund_name.csv")
+    data.to_csv(filepath)
+    # 指数型基金-基本信息
+    data = ak.fund_info_index_em()
+    filepath = os.path.join(fold_path, "fund_info_index.csv")
+    data.to_csv(filepath)
 
-    def __check_save_fold(self):
-        if not self.__save_fold:
-            raise ErrorInfo("Download fold path must be given")
 
-    def __check_stock_code(self):
-        if isinstance(self.__stock_code, int):
-            self.__stock_code = list[str(self.__stock_code)]
-        elif isinstance(self.__stock_code, str):
-            self.__stock_code = list[self.__stock_code]
-        elif isinstance(self.__stock_code, tuple):
-            self.__stock_code = list(self.__stock_code)
-        elif isinstance(self.__stock_code, list):
-            pass
+def __check_code(code):
+    new_code = []
+    if isinstance(code, int):
+        new_code.append(str(code))
+    elif isinstance(code, str):
+        new_code.append(code)
+    elif isinstance(code, tuple):
+        new_code = list(code)
+    elif isinstance(code, list):
+        new_code = code
+    else:
+        raise Exception("Input Code Type Error!")
+    return new_code
+
+
+def try_download(code, time_range):
+    data = None
+    ok = 1
+    default = 0
+    status = default
+    # 股票-历史数据
+    try:
+        if status != ok:
+            data = ak.stock_zh_a_hist(symbol=code, start_date=time_range[0], end_date=time_range[1])
+            status = ok
+    except Exception as e:
+        pass
+    try:
+        if status != ok:
+            data = ak.stock_zh_a_daily(symbol=code, start_date=time_range[0], end_date=time_range[1])
+            status = ok
+    except Exception as e:
+        pass
+    if status == ok:
+        return data
+    # 基金-etf 历史数据
+    try:
+        if status != ok:
+            data = ak.fund_etf_fund_info_em(fund=code, start_date=time_range[0], end_date=time_range[1])
+            status = ok
+    except Exception as e:
+        pass
+    if status == ok:
+        return data
+    # 债券-沪深债券 历史数据
+    try:
+        if status != ok:
+            data = ak.bond_zh_hs_daily(symbol=code)
+            status = ok
+    except Exception as e:
+        pass
+    if status == ok:
+        return data
+        # 指数历史数据
+    try:
+        if status != ok:
+            date = ak.stock_zh_index_daily(symbol=code)
+            status = ok
+    except Exception as e:
+        pass
+    try:
+        if status != ok:
+            data = ak.stock_zh_index_daily_em(symbol=code)
+            status = ok
+    except Exception as e:
+        pass
+    try:
+        if status != ok:
+            data = ak.stock_zh_index_daily_tx(symbol=code)
+            status = ok
+    except Exception as e:
+        pass
+    if status == ok:
+        return data
+    return data
+
+
+def download(code: list = None, fold_name: str = "stock_code", time_range=("19700101", "22220101")):
+    base_path = os.path.dirname(__file__)
+    fold_path = os.path.join(base_path, fold_name)
+    if not os.path.exists(fold_path):
+        os.mkdir(fold_path)
+    codes = __check_code(code)
+    for code in codes:
+        data = try_download(code=code, time_range=time_range)
+        if data is not None:
+            fullname = f"{code}.csv"
+            filepath = os.path.join(fold_path, fullname)
+            data.to_csv(filepath)
+            print(f"{code} data save to {fold_path}.")
         else:
-            raise ErrorInfo("stock_code error!")
-
-    def __pretreatment(self):
-        if self.__stock_code:
-            self.__check_stock_code()
-        self.__check_save_fold()
-        if not os.path.exists(self.__save_fold):
-            os.mkdir(self.__save_fold)
-        ...
-
-    def reset_stock_code(self, value):
-        self.__stock_code = value
-        self.__check_stock_code()
-
-    def download(self, time_range=("19700101", "22220101")):
-        for stock in self.__stock_code:
-            # 获取某个指数，例如 沪深300 指数的历史行情数据（新浪和东财）
-            date = ak.stock_zh_index_daily(symbol=stock)
-            data = ak.stock_zh_index_daily_em(symbol=stock)
-            data = ak.stock_zh_index_daily_tx(symbol=stock)
-            # 股票历史数据
-            data = ak.stock_zh_a_hist(symbol=stock, start_date=time_range[0], end_date=time_range[1])
-            data = ak.stock_zh_a_daily(symbol=stock, start_date=time_range[0], end_date=time_range[1])
-
-            fullname = f"{stock}.csv"
-            filepath = os.path.join(self.__save_fold, fullname)
-            date.to_csv(filepath)
+            print(f"Error:{code} data download failed.")
