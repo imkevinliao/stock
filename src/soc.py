@@ -1,7 +1,6 @@
-# -*- coding:utf-8 -*-
 import datetime
 import os
-import re
+
 
 import akshare as ak
 import pandas as pd
@@ -130,28 +129,23 @@ def stock_download(code: list = None, time_range=("19700101", "22220101")):
 
 
 class Analyze:
-    def __init__(self, csvfile, stock_name=""):
-        self.csvfile = csvfile
-        self.stock_name = stock_name
-        self.data = pd.read_csv(self.csvfile)
-        self.pretreatment()
+    def __init__(self, code=None):
+        if code is None:
+            raise Exception("code must be given.")
+        self.code = code
+        self.filepath = os.path.join(STOCKS_SAVE_PATH, f"{code}.csv")
+        if not os.path.exists(self.filepath):
+            # 问题：文件内容需要及时更新，下载不一定成功
+            stock_download(code=self.code)
+        self.data = pd.read_csv(self.filepath)
+        self.data_initialize()
     
-    def __extract_stock_name(self):
-        _, fullname = os.path.split(self.csvfile)
-        regex = r"\d{3,8}"
-        result = re.findall(regex, fullname)
-        if result:
-            self.stock_name = result[0]
-    
-    def pretreatment(self):
+    def data_initialize(self):
         self.data["日期"] = pd.to_datetime(self.data["日期"])
-        # 如果没有给定股票代号，那么就尝试从文件名中提取
-        if not self.stock_name:
-            self.__extract_stock_name()
     
-    def basic_info(self):
+    def stock_info(self):
         data = self.data
-        print(f"下面展示文件 {self.csvfile} 的详细数据：{self.stock_name}")
+        print(f"下面展示文件 {self.filepath} 的详细数据：{self.code}")
         records = data.shape[0]
         high_price = data["收盘"].max()
         low_price = data["收盘"].min()
@@ -172,7 +166,7 @@ class Analyze:
               f"历史上有 {(compare_records / all_records) * 100:0.2f}% 的时间高于 {compare_price}")
         if plot is True:
             ax = plt.subplot(1, 1, 1)
-            plt.title(f"stock {self.stock_name}", color="k")
+            plt.title(f"stock {self.code}", color="k")
             plt.plot(all_data["日期"], all_data["收盘"], color="b")
             plt.rcParams["font.sans-serif"] = ["SimHei"]  # 设置字体
             plt.rcParams["axes.unicode_minus"] = False  # 该语句解决图像中的“-”负号的乱码问题
