@@ -88,10 +88,10 @@ def __try_download(code, time_range):
         pass
     if status == ok:
         return data
-        # 指数历史数据
+    # 指数历史数据 (指数历史数据中，数据类型)
     try:
         if status != ok:
-            date = ak.stock_zh_index_daily(symbol=code)
+            data = ak.stock_zh_index_daily(symbol=code)
             status = ok
     except Exception as e:
         pass
