@@ -7,6 +7,7 @@ python demo.py
 
 # 小工具 
 [给定本金利率收益任意其二计算剩下的值](./src/calc.py)
+
 [计算个人所得税](./src/tax.py)
 
 # 证券缘起
