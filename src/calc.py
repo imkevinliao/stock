@@ -76,5 +76,14 @@ def calc(capital=None, year_rate=None, day_rate=None, year_gain=None, day_gain=N
 
 
 if __name__ == '__main__':
-    in_data = (10000, 0.020075, None, None, None)
+    in_data = (None, 0.029, None, 12000, None)
     calc(capital=in_data[0], year_rate=in_data[1], day_rate=in_data[2], year_gain=in_data[3], day_gain=in_data[4])
+    
+    
+    
+"""
+计算的结果：
+本金：413793.1034
+年利率：0.029000，日利率：0.00007945
+年收益：12000.00，日收益：32.8767
+"""
