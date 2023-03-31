@@ -1,6 +1,17 @@
 import calendar
 import math
 from datetime import datetime, timedelta
+from enum import Enum
+
+
+class Week(Enum):
+    Monday = (1, "星期一")
+    Tuesday = (2, "星期二")
+    Wednesday = (3, "星期三")
+    Thursday = (4, "星期四")
+    Friday = (5, "星期五")
+    Saturday = (6, "周六")
+    Sunday = (7, "周末")
 
 
 def str2time(start_date, end_date):
@@ -53,13 +64,56 @@ def calc_month_workdays(month=datetime.today().month, year=datetime.today().year
     return workdays, weekends
 
 
-if __name__ == '__main__':
+def demo():
     month = 3
     work_days, _ = calc_month_workdays(month=month)
     average_day_time = 9
     r_time = work_days * average_day_time
     print(f"{month}月份要求工时:{r_time}")
 
-"""
-3月份要求工时:207
-"""
+
+if __name__ == '__main__':
+    pass
+
+
+def calc_work_day(year=None, month=None, current_day=None):
+    import chinese_calendar as cc
+    
+    if not year:
+        year = datetime.today().year
+    if not month:
+        month = datetime.today().month
+    if not current_day:
+        current_day = datetime.today().day
+    
+    month_days = calendar.monthrange(year, month)[1]
+    s_date, e_date = tuple2time((year, month, 1), (year, month, month_days))
+    all_days = [s_date + timedelta(idx + 0) for idx in range((e_date - s_date).days + 1)]
+    all_date = [i.date() for i in all_days]
+    
+    def week_str(_day: datetime.date):
+        if _day.isoweekday() == Week.Monday.value[0]:
+            return Week.Monday.value[1]
+        elif _day.isoweekday() == Week.Tuesday.value[0]:
+            return Week.Tuesday.value[1]
+        elif _day.isoweekday() == Week.Wednesday.value[0]:
+            return Week.Wednesday.value[1]
+        elif _day.isoweekday() == Week.Thursday.value[0]:
+            return Week.Thursday.value[1]
+        elif _day.isoweekday() == Week.Friday.value[0]:
+            return Week.Friday.value[1]
+        elif _day.isoweekday() == Week.Saturday.value[0]:
+            return Week.Saturday.value[1]
+        elif _day.isoweekday() == Week.Sunday.value[0]:
+            return Week.Sunday.value[1]
+    
+    for day in all_date:
+        msg = week_str(day)
+        if cc.is_workday(day):
+            msg2 = f"是工作日"
+        else:
+            msg2 = f"是休息日"
+        print(f"{day} 是{msg}, {msg2}")
+
+
+calc_work_day(month=10)
