@@ -4,6 +4,7 @@ import time
 from enum import Enum, auto
 
 import akshare as ak
+import pandas
 import pandas as pd
 from matplotlib import pyplot as plt
 
@@ -14,20 +15,26 @@ STOCK_SAVE_PATH = os.path.join(BASIC_PATH, "stock")
 FUND_SAVE_PATH = os.path.join(BASIC_PATH, "fund")
 BOND_SAVE_PATH = os.path.join(BASIC_PATH, "bond")
 INDEX_SAVE_PATH = os.path.join(BASIC_PATH, "index")
-GLOBAL_SAVE_PATH = os.path.join(BASIC_PATH, "global")
 ALL_SAVE_PATH = [STOCK_SAVE_PATH,
                  FUND_SAVE_PATH,
                  BOND_SAVE_PATH,
                  INDEX_SAVE_PATH,
                  ]
+GLOBAL_SAVE_PATH = os.path.join(BASIC_PATH, "global")
+IMAGE_SAVE_PATH = os.path.join(BASIC_PATH, "image")
 
 
-class DownloadType(Enum):
+class BaseType(Enum):
+    STOCK = (1, "股票")
+    FUND = (2, "基金")
+    BOND = (3, "债券")
+    INDEX = (4, "指数")
     NULL = auto()
-    STOCK = auto()  # 股票
-    FUND = auto()  # 基金
-    BOND = auto()  # 债券
-    INDEX = auto()  # 指数
+    DEFAULT = auto()
+
+
+DownloadType = BaseType
+AnalyzeType = BaseType
 
 
 class Download:
@@ -47,14 +54,13 @@ class Download:
         inst.run_daley(3)
     """
     
-    def __init__(self, code="000002", securities_type: DownloadType = None,
+    def __init__(self, code="000002", download_type: DownloadType = None,
                  time_range=("19700101", "22220101"), enable_error_print=False):
-        self.securities_type = securities_type
+        self.download_type = download_type
         self.codes = self.__check_code(code)
         self.time_range = time_range
         self.__file_extension = ".csv"
         self.enable = enable_error_print
-        self.__create_download_dir()
     
     @staticmethod
     def __check_code(code):
@@ -199,26 +205,18 @@ class Download:
             if not os.path.exists(path):
                 os.mkdir(path)
     
-    def __create_download_dir(self):
-        if self.securities_type == DownloadType.STOCK:
-            self.__create_dirs(STOCK_SAVE_PATH)
-        elif self.securities_type == DownloadType.FUND:
-            self.__create_dirs(FUND_SAVE_PATH)
-        elif self.securities_type == DownloadType.BOND:
-            self.__create_dirs(BOND_SAVE_PATH)
-        elif self.securities_type == DownloadType.INDEX:
-            self.__create_dirs(INDEX_SAVE_PATH)
-        else:
-            pass
-    
     def download(self):
-        if self.securities_type == DownloadType.STOCK:
+        if self.download_type == DownloadType.STOCK:
+            self.__create_dirs(STOCK_SAVE_PATH)
             self.__download_stock()
-        elif self.securities_type == DownloadType.FUND:
+        elif self.download_type == DownloadType.FUND:
+            self.__create_dirs(FUND_SAVE_PATH)
             self.__download_fund()
-        elif self.securities_type == DownloadType.BOND:
+        elif self.download_type == DownloadType.BOND:
+            self.__create_dirs(BOND_SAVE_PATH)
             self.__download_bond()
-        elif self.securities_type == DownloadType.INDEX:
+        elif self.download_type == DownloadType.INDEX:
+            self.__create_dirs(INDEX_SAVE_PATH)
             self.__download_index()
         else:
             print(f"securities_type doesn't exist. download nothing.")
@@ -241,38 +239,59 @@ class Download:
             time.sleep(delay)
     
     def run(self):
-        if self.securities_type:
+        if self.download_type:
             self.download()
         else:
             self.guess_download()
 
 
-class AnalyzeStock:
-    def __init__(self, code="000002"):
+class Analyze:
+    def __init__(self, code="000002", analyze_type=AnalyzeType.STOCK):
         self.__code = code
-        self.__file_extension = ".csv"
-        self.__filepath = os.path.join(STOCK_SAVE_PATH, f"{code}{self.__file_extension}")
-        self.__check_filepath()
-        self.__data = pd.read_csv(self.__filepath)
-        self.__data_initialize()
+        self.__analyze_type = analyze_type
+        self.__check_safe()
+        self.__data = pd.DataFrame
+        self.__get_data()
     
-    def __check_filepath(self):
-        if not os.path.exists(self.__filepath):
-            Download(code=self.__code, securities_type=DownloadType.STOCK).run()
-            if not os.path.exists(self.__filepath):
-                raise Exception(f"download stock {self.__code} error!")
+    def __check_safe(self):
+        current_support = [AnalyzeType.STOCK, AnalyzeType.FUND]
+        if self.__analyze_type not in current_support:
+            print(f"当前支持的分析类型为:{current_support}")
+            raise "当前暂不支持该类型分析,请等待后续代码更新!"
     
-    def __data_initialize(self):
-        self.__data["日期"] = pd.to_datetime(self.__data["日期"])
+    def __get_data(self) -> pd.DataFrame:
+        if AnalyzeType.STOCK == self.__analyze_type:
+            filepath = os.path.join(STOCK_SAVE_PATH, f"{self.__code}.csv")
+            if not os.path.exists(filepath):
+                Download(code=self.__code, download_type=self.__analyze_type).run()
+            else:
+                # 存在则更新文件 后续完善这一部分
+                pass
+            data = pd.read_csv(filepath)
+            # 将str转换为日期格式
+            data["日期"] = pd.to_datetime(data["日期"])
+        elif AnalyzeType.FUND == self.__analyze_type:
+            filepath = os.path.join(FUND_SAVE_PATH, f"{self.__code}.csv")
+            if not os.path.exists(filepath):
+                Download(code=self.__code, download_type=self.__analyze_type).run()
+            data = pd.read_csv(filepath)
+            data["净值日期"] = pd.to_datetime(data["净值日期"])
+        self.__data = data
     
     def info(self):
         data = self.__data
-        print(f"下面展示文件 {self.__filepath} 的详细数据：{self.__code}")
+        print(f"下面展示 {self.__code} 的详细数据:")
         records = data.shape[0]
-        high_price = data["收盘"].max()
-        low_price = data["收盘"].min()
-        high_price_records = data.loc[data["收盘"] == high_price]
-        low_price_records = data.loc[data["收盘"] == low_price]
+        if self.__analyze_type == AnalyzeType.STOCK:
+            high_price = data["收盘"].max()
+            low_price = data["收盘"].min()
+            high_price_records = data.loc[data["收盘"] == high_price]
+            low_price_records = data.loc[data["收盘"] == low_price]
+        elif self.__analyze_type == AnalyzeType.FUND:
+            high_price = data["单位净值"].max()
+            low_price = data["单位净值"].min()
+            high_price_records = data.loc[data["单位净值"] == high_price]
+            low_price_records = data.loc[data["单位净值"] == low_price]
         print(f"最高价格一共有 {len(high_price_records)} 条，最高价详细数据：\n{high_price_records}")
         print(f"最低价格一共有 {len(low_price_records)} 条，最低价详细数据：\n{low_price_records}")
         print(f"一共有 {records} 条数据，最高：{high_price}, 最低：{low_price}")
@@ -280,74 +299,33 @@ class AnalyzeStock:
     def query(self, compare_price: float, plot=False, start_time="19700101", end_time="22220101"):
         s_date = datetime.datetime.strptime(str(start_time), '%Y%m%d').date()
         e_date = datetime.datetime.strptime(str(end_time), '%Y%m%d').date()
-        all_data = self.__data[self.__data["日期"].isin(pd.date_range(s_date, e_date))]
+        if self.__analyze_type == AnalyzeType.STOCK:
+            all_data = self.__data[self.__data["日期"].isin(pd.date_range(s_date, e_date))]
+            compare_results_high = all_data[all_data["收盘"] > compare_price]
+        elif self.__analyze_type == AnalyzeType.FUND:
+            all_data = self.__data[self.__data["净值日期"].isin(pd.date_range(s_date, e_date))]
+            compare_results_high = all_data[all_data["单位净值"] > compare_price]
         all_records = all_data.shape[0]
-        compare_results_high = all_data[all_data["收盘"] > compare_price]
         compare_records = compare_results_high.shape[0]
-        print(f"在查询时间范围内有 {all_records} 条数据，价格高于 {compare_price} 的有 {compare_records} 条记录，"
-              f"历史上有 {(compare_records / all_records) * 100:0.2f}% 的时间高于 {compare_price}")
+        print(f"在[{s_date},{e_date}]有{all_records}条数据,高于{compare_price}的有{compare_records}条记录")
+        print(f"历史上有{(compare_records / all_records) * 100:0.2f}% 的时间高于 {compare_price}")
         if plot is True:
             ax = plt.subplot(1, 1, 1)
             plt.rcParams["font.sans-serif"] = ["SimHei"]  # 设置字体
             plt.rcParams["axes.unicode_minus"] = False  # 该语句解决图像中的“-”负号的乱码问题
-            plt.title(f"stock {self.__code}", color="k")
-            plt.plot(all_data["日期"], all_data["收盘"], color="b")
+            plt.title(f"{self.__code}", color="k")
+            if self.__analyze_type == AnalyzeType.STOCK:
+                plt.plot(all_data["日期"], all_data["收盘"], color="b")
+            elif self.__analyze_type == AnalyzeType.FUND:
+                plt.plot(all_data["净值日期"], all_data["单位净值"], color="b")
             ax.text(0.8, 0.9, c="b", s="---历史走势", transform=ax.transAxes)
             ax.text(0.8, 0.8, c="r", s="---比较价格", transform=ax.transAxes)
             text = f"数据个数：{all_records}\n高于 {compare_price} 数据个数：{compare_records}"
             ax.text(0.05, 0.9, c="k", s=text, transform=ax.transAxes)
             plt.axhline(y=compare_price, c="r")
-            plt.show()
-
-
-class AnalyzeFund:
-    def __init__(self, code="510310"):
-        self.__code = code
-        self.__file_extension = ".csv"
-        self.__filepath = os.path.join(FUND_SAVE_PATH, f"{code}{self.__file_extension}")
-        self.__check_filepath()
-        self.__data = pd.read_csv(self.__filepath)
-        self.__data_initialize()
-    
-    def __data_initialize(self):
-        self.__data["净值日期"] = pd.to_datetime(self.__data["净值日期"])
-    
-    def __check_filepath(self):
-        if not os.path.exists(self.__filepath):
-            Download(code=self.__code, securities_type=DownloadType.FUND).run()
-            if not os.path.exists(self.__filepath):
-                raise Exception(f"download stock {self.__code} error!")
-    
-    def info(self):
-        data = self.__data
-        print(f"下面展示文件 {self.__filepath} 的详细数据：{self.__code}")
-        records = data.shape[0]
-        high_price = data["单位净值"].max()
-        low_price = data["单位净值"].min()
-        high_price_records = data.loc[data["单位净值"] == high_price]
-        low_price_records = data.loc[data["单位净值"] == low_price]
-        print(f"最高价格一共有 {len(high_price_records)} 条，最高价详细数据：\n{high_price_records}")
-        print(f"最低价格一共有 {len(low_price_records)} 条，最低价详细数据：\n{low_price_records}")
-        print(f"一共有 {records} 条数据，最高：{high_price}, 最低：{low_price}")
-    
-    def query(self, compare_price: float, plot=False, start_time="19700101", end_time="22220101"):
-        s_date = datetime.datetime.strptime(str(start_time), '%Y%m%d').date()
-        e_date = datetime.datetime.strptime(str(end_time), '%Y%m%d').date()
-        all_data = self.__data[self.__data["净值日期"].isin(pd.date_range(s_date, e_date))]
-        all_records = all_data.shape[0]
-        compare_results_high = all_data[all_data["单位净值"] > compare_price]
-        compare_records = compare_results_high.shape[0]
-        print(f"在查询时间范围内有 {all_records} 条数据，价格高于 {compare_price} 的有 {compare_records} 条记录，"
-              f"历史上有 {(compare_records / all_records) * 100:0.2f}% 的时间高于 {compare_price}")
-        if plot is True:
-            ax = plt.subplot(1, 1, 1)
-            plt.rcParams["font.sans-serif"] = ["SimHei"]  # 设置字体
-            plt.rcParams["axes.unicode_minus"] = False  # 该语句解决图像中的“-”负号的乱码问题
-            plt.title(f"stock {self.__code}", color="k")
-            plt.plot(all_data["净值日期"], all_data["单位净值"], color="b")
-            ax.text(0.8, 0.9, c="b", s="---历史走势", transform=ax.transAxes)
-            ax.text(0.8, 0.8, c="r", s="---比较价格", transform=ax.transAxes)
-            text = f"数据个数：{all_records}\n高于 {compare_price} 数据个数：{compare_records}"
-            ax.text(0.05, 0.9, c="k", s=text, transform=ax.transAxes)
-            plt.axhline(y=compare_price, c="r")
+            image_name = f"{self.__analyze_type.value[1]}_{self.__code}.jpg"
+            image_path = os.path.join(IMAGE_SAVE_PATH, image_name)
+            if not os.path.exists(IMAGE_SAVE_PATH):
+                os.mkdir(IMAGE_SAVE_PATH)
+            plt.savefig(image_path)
             plt.show()
