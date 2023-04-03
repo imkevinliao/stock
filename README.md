@@ -6,11 +6,11 @@ python demo.py
 **使用示例：样例代码->[demo](./src/demo.py)**
 
 # 小工具 
-[计算本金利率收益](./src/calc.py)
+[计算本金利率收益](./tool/calc.py)
 
-[计算个人所得税](./src/tax.py)
+[计算个人所得税](./tool/tax.py)
 
-[计算每月工时及下班时间](./src/worktime.py)
+[计算每月工时及下班时间](./tool/worktime.py)
 
 # 证券缘起
 股市总是能给人一些虚无缥缈的希望，正是这些希望让我们对未来有所希冀。
