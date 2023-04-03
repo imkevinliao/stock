@@ -1,7 +1,7 @@
 # SOC
 通过简单的代码就可以得到你想知道的股票的信息，让代码变得非常简单
 ```
-funds = ["000300"]
+funds = ["000001"]
 inst = Analyze(code=funds[0], analyze_type=AnalyzeType.STOCK)
 inst.info()
 inst.query(compare_price=12.82, plot=True)
