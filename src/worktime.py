@@ -118,6 +118,9 @@ def demo_use_third_library():
 
 
 if __name__ == '__main__':
+    """
+    使用标准库函数无法准确判别节假日这类情况，所以使用第三方库 chinesecalendar 判断是否为工作日，这种计算更为准确但是需要先安装第三方库.
+    """
     # 可以手动指定当前是哪一天，不指定默认是程序运行当天
     month_workday, month_weekday, current_workday, current_weekday = calc_workday(month=None, day=None)
     # 月平均工时要求
