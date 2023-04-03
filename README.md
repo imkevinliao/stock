@@ -10,7 +10,7 @@ python demo.py
 
 [计算个人所得税](./src/tax.py)
 
-[计算每月工时](./src/worktime.py)
+[计算每月工时及下班时间](./src/worktime.py)
 
 # 证券缘起
 股市总是能给人一些虚无缥缈的希望，正是这些希望让我们对未来有所希冀。
