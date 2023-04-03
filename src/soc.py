@@ -4,7 +4,6 @@ import time
 from enum import Enum, auto
 
 import akshare as ak
-import pandas
 import pandas as pd
 from matplotlib import pyplot as plt
 
@@ -25,16 +24,17 @@ IMAGE_SAVE_PATH = os.path.join(BASIC_PATH, "image")
 
 
 class BaseType(Enum):
+    # 如非必要，尽量不要使用枚举类型的值
     STOCK = (1, "股票")
     FUND = (2, "基金")
     BOND = (3, "债券")
     INDEX = (4, "指数")
     NULL = auto()
-    DEFAULT = auto()
 
 
 DownloadType = BaseType
 AnalyzeType = BaseType
+UpdateType = BaseType
 
 
 class Download:
@@ -245,13 +245,35 @@ class Download:
             self.guess_download()
 
 
+class Update:
+    def __init__(self, code, update_type, update_filepath, start_time="20220101", end_time="22220101"):
+        self.__code = code
+        self.__update_type = update_type
+        self.__update_filepath = update_filepath
+        self.__update_start_time = start_time
+        self.__update_end_time = end_time
+    
+    def normal_update(self):
+        old_data = pd.read_csv(self.__update_filepath)
+        Download(code=self.__code, download_type=self.__update_type,
+                 time_range=(self.__update_start_time, self.__update_end_time)).run()
+        new_data = pd.read_csv(self.__update_filepath)
+        pd.concat([old_data, new_data]).to_csv(self.__update_filepath)
+    
+    def force_update(self):
+        Download(code=self.__code, download_type=self.__update_type).run()
+
+
 class Analyze:
     def __init__(self, code="000002", analyze_type=AnalyzeType.STOCK):
+        if isinstance(code, int):
+            code = str(code)
         self.__code = code
         self.__analyze_type = analyze_type
         self.__check_safe()
         self.__data = pd.DataFrame
-        self.__get_data()
+        # 设置数据这部分稍显复杂，待优化
+        self.__set_data()
     
     def __check_safe(self):
         current_support = [AnalyzeType.STOCK, AnalyzeType.FUND]
@@ -259,24 +281,42 @@ class Analyze:
             print(f"当前支持的分析类型为:{current_support}")
             raise "当前暂不支持该类型分析,请等待后续代码更新!"
     
-    def __get_data(self) -> pd.DataFrame:
+    def manual_set_data(self, data: pd.DataFrame):
+        self.__data = data
+    
+    def __set_data(self):
+        current_date = datetime.datetime.now().date()
         if AnalyzeType.STOCK == self.__analyze_type:
             filepath = os.path.join(STOCK_SAVE_PATH, f"{self.__code}.csv")
+            # 文件不存在则下载，存在则更新
             if not os.path.exists(filepath):
                 Download(code=self.__code, download_type=self.__analyze_type).run()
             else:
-                # 存在则更新文件 后续完善这一部分
-                pass
-            data = pd.read_csv(filepath)
-            # 将str转换为日期格式
-            data["日期"] = pd.to_datetime(data["日期"])
+                old_data = pd.read_csv(filepath)
+                old_data["日期"] = pd.to_datetime(old_data["日期"])
+                old_max_date = old_data["日期"].max().date()
+                if old_max_date != current_date:
+                    s_time = str(old_max_date).replace("-", "")
+                    inst = Update(code=self.__code, update_type=self.__analyze_type,
+                                  update_filepath=filepath, start_time=s_time)
+                    inst.normal_update()
+            self.__data = pd.read_csv(filepath)
+            self.__data["日期"] = pd.to_datetime(self.__data["日期"])
         elif AnalyzeType.FUND == self.__analyze_type:
             filepath = os.path.join(FUND_SAVE_PATH, f"{self.__code}.csv")
             if not os.path.exists(filepath):
                 Download(code=self.__code, download_type=self.__analyze_type).run()
-            data = pd.read_csv(filepath)
-            data["净值日期"] = pd.to_datetime(data["净值日期"])
-        self.__data = data
+            else:
+                old_data = pd.read_csv(filepath)
+                old_data["净值日期"] = pd.to_datetime(old_data["净值日期"])
+                old_max_date = old_data["净值日期"].max().date()
+                if old_max_date != current_date:
+                    s_time = str(old_max_date).replace("-", "")
+                    inst = Update(code=self.__code, update_type=self.__analyze_type,
+                                  update_filepath=filepath, start_time=s_time)
+                    inst.normal_update()
+            self.__data = pd.read_csv(filepath)
+            self.__data["净值日期"] = pd.to_datetime(self.__data["净值日期"])
     
     def info(self):
         data = self.__data
@@ -287,14 +327,19 @@ class Analyze:
             low_price = data["收盘"].min()
             high_price_records = data.loc[data["收盘"] == high_price]
             low_price_records = data.loc[data["收盘"] == low_price]
+            latest_date = data["日期"].max()
+            latest_records = data.loc[data["日期"] == latest_date]
         elif self.__analyze_type == AnalyzeType.FUND:
             high_price = data["单位净值"].max()
             low_price = data["单位净值"].min()
             high_price_records = data.loc[data["单位净值"] == high_price]
             low_price_records = data.loc[data["单位净值"] == low_price]
-        print(f"最高价格一共有 {len(high_price_records)} 条，最高价详细数据：\n{high_price_records}")
-        print(f"最低价格一共有 {len(low_price_records)} 条，最低价详细数据：\n{low_price_records}")
-        print(f"一共有 {records} 条数据，最高：{high_price}, 最低：{low_price}")
+            latest_date = data["净值日期"].max()
+            latest_records = data.loc[data["净值日期"] == latest_date]
+        print(f"最高价格一共有{len(high_price_records)}条，最高价详细数据:\n{high_price_records}")
+        print(f"最低价格一共有{len(low_price_records)}条，最低价详细数据:\n{low_price_records}")
+        print(f"最新的一条数据是:\n{latest_records}")
+        print(f"一共有{records}条数据，最高：{high_price}, 最低：{low_price}")
     
     def query(self, compare_price: float, plot=False, start_time="19700101", end_time="22220101"):
         s_date = datetime.datetime.strptime(str(start_time), '%Y%m%d').date()
@@ -307,8 +352,8 @@ class Analyze:
             compare_results_high = all_data[all_data["单位净值"] > compare_price]
         all_records = all_data.shape[0]
         compare_records = compare_results_high.shape[0]
-        print(f"在[{s_date},{e_date}]有{all_records}条数据,高于{compare_price}的有{compare_records}条记录")
-        print(f"历史上有{(compare_records / all_records) * 100:0.2f}% 的时间高于 {compare_price}")
+        print(f"({s_date},{e_date})有{all_records}条数据,高于{compare_price}的有{compare_records}条记录")
+        print(f"历史上有{(compare_records / all_records) * 100:0.2f}%的时间高于{compare_price}")
         if plot is True:
             ax = plt.subplot(1, 1, 1)
             plt.rcParams["font.sans-serif"] = ["SimHei"]  # 设置字体
@@ -320,7 +365,7 @@ class Analyze:
                 plt.plot(all_data["净值日期"], all_data["单位净值"], color="b")
             ax.text(0.8, 0.9, c="b", s="---历史走势", transform=ax.transAxes)
             ax.text(0.8, 0.8, c="r", s="---比较价格", transform=ax.transAxes)
-            text = f"数据个数：{all_records}\n高于 {compare_price} 数据个数：{compare_records}"
+            text = f"数据总个数：{all_records}\n高于 {compare_price} 数据个数：{compare_records}"
             ax.text(0.05, 0.9, c="k", s=text, transform=ax.transAxes)
             plt.axhline(y=compare_price, c="r")
             image_name = f"{self.__analyze_type.value[1]}_{self.__code}.jpg"
