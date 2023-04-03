@@ -64,7 +64,7 @@ def calc_month_workdays(month=datetime.today().month, year=datetime.today().year
     return workdays, weekends
 
 
-def demo():
+def demo_use_standard_library():
     month = 3
     work_days, _ = calc_month_workdays(month=month)
     average_day_time = 9
@@ -72,48 +72,77 @@ def demo():
     print(f"{month}月份要求工时:{r_time}")
 
 
-if __name__ == '__main__':
-    pass
-
-
-def calc_work_day(year=None, month=None, current_day=None):
-    import chinese_calendar as cc
-    
-    if not year:
-        year = datetime.today().year
-    if not month:
-        month = datetime.today().month
-    if not current_day:
-        current_day = datetime.today().day
+def calc_workday(year=None, month=None, day=None):
+    try:
+        import chinese_calendar as cc
+    except ImportError:
+        raise f"please install third-part library: pip install chinesecalendar"
+    current = datetime.now()
+    year = current.year if not year else year
+    month = current.month if not month else month
+    day = current.day if not day else day
+    current_user = datetime(year=year, month=month, day=day)
     
     month_days = calendar.monthrange(year, month)[1]
     s_date, e_date = tuple2time((year, month, 1), (year, month, month_days))
     all_days = [s_date + timedelta(idx + 0) for idx in range((e_date - s_date).days + 1)]
     all_date = [i.date() for i in all_days]
     
-    def week_str(_day: datetime.date):
-        if _day.isoweekday() == Week.Monday.value[0]:
-            return Week.Monday.value[1]
-        elif _day.isoweekday() == Week.Tuesday.value[0]:
-            return Week.Tuesday.value[1]
-        elif _day.isoweekday() == Week.Wednesday.value[0]:
-            return Week.Wednesday.value[1]
-        elif _day.isoweekday() == Week.Thursday.value[0]:
-            return Week.Thursday.value[1]
-        elif _day.isoweekday() == Week.Friday.value[0]:
-            return Week.Friday.value[1]
-        elif _day.isoweekday() == Week.Saturday.value[0]:
-            return Week.Saturday.value[1]
-        elif _day.isoweekday() == Week.Sunday.value[0]:
-            return Week.Sunday.value[1]
+    # 当天不计入，计算本月当天之前的工作天数和休息天数
+    count_current_workday = 0
+    count_current_weekday = 0
+    for day in all_days:
+        if day < current_user:
+            if cc.is_workday(day):
+                count_current_workday = count_current_workday + 1
+            else:
+                count_current_weekday = count_current_weekday + 1
     
-    for day in all_date:
-        msg = week_str(day)
+    count_month_workday = 0
+    count_month_weekday = 0
+    for day in all_days:
         if cc.is_workday(day):
-            msg2 = f"是工作日"
+            count_month_workday = count_month_workday + 1
         else:
-            msg2 = f"是休息日"
-        print(f"{day} 是{msg}, {msg2}")
+            count_month_weekday = count_month_weekday + 1
+    
+    return count_month_workday, count_month_weekday, count_current_workday, count_current_weekday
 
 
-calc_work_day(month=10)
+def demo_use_third_library():
+    month_workday, month_weekday, current_workday, current_weekday = calc_workday(month=4, day=6)
+    print(month_workday)
+    print(month_weekday)
+    print(current_workday)
+    print(current_weekday)
+
+
+if __name__ == '__main__':
+    # 可以手动指定当前是哪一天，不指定默认是程序运行当天
+    month_workday, month_weekday, current_workday, current_weekday = calc_workday(month=None, day=None)
+    # 月平均工时要求
+    month_average_hours = 9
+    # 已经完成的工时和剩余工时(手动填写当前工时数)
+    completed_work_hours = 0
+    
+    month_work_hours = month_workday * month_average_hours
+    current_work_hours = current_workday * month_work_hours
+    
+    completed_workday = current_workday
+    remaining_workday = month_workday - current_workday
+    
+    remaining_work_hours = month_work_hours - completed_work_hours
+    # 计算接下来为了完成工时，需要每天工作多久：剩余工作时间/剩余工作天数
+    next_day_hours = remaining_work_hours / (month_workday - current_workday)
+    
+    # 假定晚上19点下班，当天工时计为8小时
+    base_time = [19, 8]
+    off_duty = next_day_hours - base_time[1] + base_time[0]
+    if off_duty > 24:
+        print(f"没救了，工时补不回来的")
+    if off_duty < 0:
+        print(f"没救了，工时太多了，新时代卷王，加班狂魔.")
+    minutes, hours = math.modf(off_duty)
+    minutes = int(minutes * 60)
+    hours = int(hours)
+    print(f"您的下班时间为 {hours}:{minutes}")
