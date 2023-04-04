@@ -45,7 +45,7 @@ class Download:
     
     给定证券类型能更准确的下载，不给定则全部下载,考虑到批量抓取的问题，下载应该要有一定延迟
     example a:
-        inst = Download(code=["000002"],securities_type=Securities.STOCK)
+        inst = Download(code=["000002"],download_type=DownloadType.STOCK)
         # inst.run()
         inst.run_delay（3）
     example b:
@@ -363,9 +363,9 @@ class Analyze:
                 plt.plot(all_data["日期"], all_data["收盘"], color="b")
             elif self.__analyze_type == AnalyzeType.FUND:
                 plt.plot(all_data["净值日期"], all_data["单位净值"], color="b")
-            ax.text(0.8, 0.9, c="b", s="---Historical trends", transform=ax.transAxes)
-            ax.text(0.8, 0.8, c="r", s="---Compare prices", transform=ax.transAxes)
-            text = f"Total number of data records:{all_records}\n{compare_records}records more than{compare_price}"
+            ax.text(0.7, 0.9, c="b", s="---Historical trends", transform=ax.transAxes)
+            ax.text(0.7, 0.8, c="r", s="---Compare prices", transform=ax.transAxes)
+            text = f"Records:{all_records}\n{compare_records}>{compare_price}"
             ax.text(0.05, 0.9, c="k", s=text, transform=ax.transAxes)
             plt.axhline(y=compare_price, c="r")
             image_name = f"{self.__analyze_type.value[1]}_{self.__code}.jpg"
