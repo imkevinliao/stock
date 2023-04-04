@@ -375,3 +375,4 @@ class Analyze:
                 os.mkdir(IMAGE_SAVE_PATH)
             plt.savefig(image_path)
             plt.show()
+            plt.close()
