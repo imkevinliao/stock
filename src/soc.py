@@ -356,16 +356,16 @@ class Analyze:
         print(f"历史上有{(compare_records / all_records) * 100:0.2f}%的时间高于{compare_price}")
         if plot is True:
             ax = plt.subplot(1, 1, 1)
-            plt.rcParams["font.sans-serif"] = ["SimHei"]  # 设置字体
-            plt.rcParams["axes.unicode_minus"] = False  # 该语句解决图像中的“-”负号的乱码问题
+            # plt.rcParams["font.sans-serif"] = ["SimHei"]  # 设置字体
+            # plt.rcParams["axes.unicode_minus"] = False  # 该语句解决图像中的“-”负号的乱码问题
             plt.title(f"{self.__code}", color="k")
             if self.__analyze_type == AnalyzeType.STOCK:
                 plt.plot(all_data["日期"], all_data["收盘"], color="b")
             elif self.__analyze_type == AnalyzeType.FUND:
                 plt.plot(all_data["净值日期"], all_data["单位净值"], color="b")
-            ax.text(0.8, 0.9, c="b", s="---历史走势", transform=ax.transAxes)
-            ax.text(0.8, 0.8, c="r", s="---比较价格", transform=ax.transAxes)
-            text = f"数据总个数：{all_records}\n高于 {compare_price} 数据个数：{compare_records}"
+            ax.text(0.8, 0.9, c="b", s="---Historical trends", transform=ax.transAxes)
+            ax.text(0.8, 0.8, c="r", s="---Compare prices", transform=ax.transAxes)
+            text = f"Total number of data records:{all_records}\n{compare_records}records more than{compare_price}"
             ax.text(0.05, 0.9, c="k", s=text, transform=ax.transAxes)
             plt.axhline(y=compare_price, c="r")
             image_name = f"{self.__analyze_type.value[1]}_{self.__code}.jpg"
