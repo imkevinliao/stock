@@ -286,6 +286,7 @@ class Analyze:
     
     def __set_data(self):
         current_date = datetime.datetime.now().date()
+        yesterday_date = current_date + datetime.timedelta(days=-1)
         if AnalyzeType.STOCK == self.__analyze_type:
             filepath = os.path.join(STOCK_SAVE_PATH, f"{self.__code}.csv")
             # 文件不存在则下载，存在则更新
@@ -295,8 +296,8 @@ class Analyze:
                 old_data = pd.read_csv(filepath)
                 old_data["日期"] = pd.to_datetime(old_data["日期"])
                 old_max_date = old_data["日期"].max().date()
-                if old_max_date != current_date:
-                    s_time = str(old_max_date).replace("-", "")
+                if old_max_date not in [yesterday_date, current_date]:
+                    s_time = str(old_max_date + datetime.timedelta(days=-1)).replace("-", "")
                     inst = Update(code=self.__code, update_type=self.__analyze_type,
                                   update_filepath=filepath, start_time=s_time)
                     inst.normal_update()
@@ -310,8 +311,8 @@ class Analyze:
                 old_data = pd.read_csv(filepath)
                 old_data["净值日期"] = pd.to_datetime(old_data["净值日期"])
                 old_max_date = old_data["净值日期"].max().date()
-                if old_max_date != current_date:
-                    s_time = str(old_max_date).replace("-", "")
+                if old_max_date not in [yesterday_date, current_date]:
+                    s_time = str(old_max_date + datetime.timedelta(days=-1)).replace("-", "")
                     inst = Update(code=self.__code, update_type=self.__analyze_type,
                                   update_filepath=filepath, start_time=s_time)
                     inst.normal_update()
