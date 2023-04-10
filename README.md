@@ -10,7 +10,7 @@ inst.query(compare_price=12.82, plot=True)
 
 **如何使用**
 1. 安装 Python （Python版本需要大于3.6）
-2. 安装依赖的库 pip install requirements.txt
+2. 安装依赖的库 pip install -r requirements.txt
 3. 运行示例文件 python ./src/demo.py  [**使用示例：样例代码->[demo](./src/demo.py)**]
 4. 运行后会在文件的同级目录下生成文件夹（其中包含对应股票代码的csv格式数据文件 可以使用Excel打开直接查看 也可以以txt文本方式打开查看）
 
