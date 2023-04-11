@@ -37,12 +37,33 @@ AnalyzeType = BaseType
 UpdateType = BaseType
 
 
+def global_download():
+    if not os.path.exists(GLOBAL_SAVE_PATH):
+        os.mkdir(GLOBAL_SAVE_PATH)
+    # 股票指数-成份股-所有可以获取的指数表
+    data = ak.index_stock_info()
+    filepath = os.path.join(GLOBAL_SAVE_PATH, "stock_index_info.csv")
+    data.to_csv(filepath)
+    # A 股股票代码和简称
+    data = ak.stock_info_a_code_name()
+    filepath = os.path.join(GLOBAL_SAVE_PATH, "stock_a_code.csv")
+    data.to_csv(filepath)
+    # 公募基金-基本信息
+    data = ak.fund_name_em()
+    filepath = os.path.join(GLOBAL_SAVE_PATH, "fund_name.csv")
+    data.to_csv(filepath)
+    # 指数型基金-基本信息
+    data = ak.fund_info_index_em()
+    filepath = os.path.join(GLOBAL_SAVE_PATH, "fund_info_index.csv")
+    data.to_csv(filepath)
+
+
 class Download:
     """
     filename = code +  file_extension
     example:
         000002.csv
-    
+
     给定证券类型能更准确的下载，不给定则全部下载,考虑到批量抓取的问题，下载应该要有一定延迟
     example a:
         inst = Download(code=["000002"],download_type=DownloadType.STOCK)
@@ -174,25 +195,6 @@ class Download:
             else:
                 if self.enable:
                     print(f"error: index {code} download failed.")
-    
-    @staticmethod
-    def global_download():
-        # 股票指数-成份股-所有可以获取的指数表
-        data = ak.index_stock_info()
-        filepath = os.path.join(GLOBAL_SAVE_PATH, "stock_index_info.csv")
-        data.to_csv(filepath)
-        # A 股股票代码和简称
-        data = ak.stock_info_a_code_name()
-        filepath = os.path.join(GLOBAL_SAVE_PATH, "stock_a_code.csv")
-        data.to_csv(filepath)
-        # 公募基金-基本信息
-        data = ak.fund_name_em()
-        filepath = os.path.join(GLOBAL_SAVE_PATH, "fund_name.csv")
-        data.to_csv(filepath)
-        # 指数型基金-基本信息
-        data = ak.fund_info_index_em()
-        filepath = os.path.join(GLOBAL_SAVE_PATH, "fund_info_index.csv")
-        data.to_csv(filepath)
     
     @staticmethod
     def __create_dirs(paths):
