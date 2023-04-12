@@ -1,6 +1,6 @@
 import os
 
-from soc_v2 import Analyze, CodeType
+from soc import Analyze, CodeType
 
 index = ["sh000922"]
 
