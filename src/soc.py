@@ -20,7 +20,7 @@ def global_download():
         os.mkdir(save_path_global)
     # 股票指数-成份股-所有可以获取的指数表
     data = ak.index_stock_info()
-    filepath = os.path.join(save_path_global, "index_stock_info.csv")
+    filepath = os.path.join(save_path_global, "股票指数表.csv")
     data.to_csv(filepath)
     # A 股股票代码和简称
     data = ak.stock_info_a_code_name()
@@ -28,7 +28,7 @@ def global_download():
     data.to_csv(filepath)
     # 公募基金-基本信息
     data = ak.fund_name_em()
-    filepath = os.path.join(save_path_global, "fund_name_em.csv")
+    filepath = os.path.join(save_path_global, "公募基金表.csv")
     data.to_csv(filepath)
     # 指数型基金-基本信息
     data = ak.fund_info_index_em()
