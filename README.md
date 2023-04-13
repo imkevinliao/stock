@@ -1,21 +1,27 @@
 # SOC
 通过简单的代码就可以得到你想知道的股票的信息，让代码变得非常简单
 ```
-funds = ["000001"]
-inst = Analyze(code=funds[0], analyze_type=AnalyzeType.STOCK)
-inst.info()
-inst.query(compare_price=12.82, plot=True)
+import os
+
+from soc import Analyze, CodeType
+
+index = ["sh000922"]
+
+for i in index:
+    inst = Analyze(code=i, codetype=CodeType.INDEX)
+    inst.basic_info()
+    inst.query()
+    inst.plot()
 ```
 享受技术带来的快来，拿起数据的武器，分析某一只股票的过去，然后预测它的将来，不一定正确，但旅途的本身就是一件很快乐的事情，旅行者，不是吗？提瓦特大陆不只有马斯克礁。
 
 **如何使用**
 1. 安装 Python （Python版本需要大于3.6）
 2. 安装依赖的库 pip install -r requirements.txt
-3. 运行示例文件 python ./src/demo.py  [**使用示例：样例代码->[demo](./src/soc_demo.py)**]
-4. 运行后会在文件的同级目录下生成文件夹（其中包含对应股票代码的csv格式数据文件 可以使用Excel打开直接查看 也可以以txt文本方式打开查看）
 
 # 更新信息
 2023.04.12 --更新了新版的soc.py代码，旧版本代码被废弃更名为soc_old.py
+2023.04.13 --更新结构，从文件中读取股票指数，方便分析股票指数
 
 # 问答
 Q:为什么命名为soc.py?
