@@ -5,7 +5,13 @@ import os
 
 from soc import Analyze, CodeType
 
-index = ["sh000922"]
+
+index = ["sh000922"] 
+# 指数也可以写为 000922，由于指数需要带市场标识，但是考虑到代码的统一性，不需要输入时候给定市场标识，会从json文件中读取然后将 000922 改为 sh000922 用户无需关心
+
+stock = ["000002"]
+
+fund = ["512170", "516160"]
 
 for i in index:
     inst = Analyze(code=i, codetype=CodeType.INDEX)
