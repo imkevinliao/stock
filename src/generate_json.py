@@ -8,7 +8,7 @@ from easydict import EasyDict
 
 from config import *
 
-index_path = join(json_source_path, f"股票指数表.csv")
+index_path = join(json_source_path, f"证券指数表.csv")
 fund_path = join(json_source_path, f"公募基金表.csv")
 stock_path = join(json_source_path, f"A股股票表.csv")
 
