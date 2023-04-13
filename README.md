@@ -4,8 +4,6 @@
 from config import *
 from soc import CodeType, Analyze
 
-os.environ['no_proxy'] = '*'
-
 stock = ["000002"]
 fund = ["000001", "000003"]
 index = ["000300", "000905", "000016"]
