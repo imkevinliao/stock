@@ -1,21 +1,28 @@
 # SOC
 通过简单的代码就可以得到你想知道的股票的信息，让代码变得非常简单
 ```
-import os
+from config import *
+from soc import CodeType, Analyze
 
-from soc import Analyze, CodeType
-
-
-index = ["sh000922"] 
-"""
-指数也可以写为 000922，由于指数需要带市场标识，但是考虑到代码的统一性，
-不需要输入时候给定市场标识，会从json文件中读取然后将 000922 改为 sh000922 用户无需关心
-"""
+os.environ['no_proxy'] = '*'
 
 stock = ["000002"]
-
-fund = ["512170", "516160"]
-
+fund = ["000001", "000003"]
+index = ["000300", "000905", "000016"]
+"""
+指数也可以写为 000300，由于指数需要带市场标识，但是考虑到代码的统一性，
+不需要输入时候给定市场标识，会从json文件中读取然后将 000300 改为 sh000300 用户无需关心
+"""
+for i in stock:
+    inst = Analyze(code=i, codetype=CodeType.STOCK)
+    inst.basic_info()
+    inst.query()
+    inst.plot()
+for i in fund:
+    inst = Analyze(code=i, codetype=CodeType.FUND)
+    inst.basic_info()
+    inst.query()
+    inst.plot()
 for i in index:
     inst = Analyze(code=i, codetype=CodeType.INDEX)
     inst.basic_info()
