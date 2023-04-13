@@ -1,4 +1,6 @@
 import datetime
+import json
+import os.path
 from enum import Enum
 
 import akshare as ak
@@ -125,6 +127,41 @@ class UpdateCode(DownloadCode):
             super().download()
 
 
+class MyJson:
+    def __init__(self, code: str, codetype: CodeType):
+        self.code = code
+        self.codetype = codetype
+        self.filepath = json_filepath
+    
+    def get_content(self) -> dict:
+        with open(self.filepath, "r", encoding="utf-8") as f:
+            content = json.loads(f.read())
+        return content
+    
+    def get_name(self):
+        content = self.get_content()
+        stock = content["stock"]
+        fund = content["fund"]
+        index = content["index"]
+        name = ""
+        if self.codetype == CodeType.STOCK:
+            for key, value in stock.items():
+                if self.code in key:
+                    name = value
+        elif self.codetype == CodeType.FUND:
+            for key, value in fund.items():
+                if self.code in key:
+                    name = value
+        elif self.codetype == CodeType.INDEX:
+            for key, value in index.items():
+                if self.code in key:
+                    name = value
+        if name:
+            return name
+        else:
+            return None
+
+
 class Analyze(UpdateCode):
     def __init__(self, code: str, codetype: CodeType):
         super().__init__(code, codetype)
@@ -134,6 +171,13 @@ class Analyze(UpdateCode):
         self.time = ("19700101", "22220101")
         self.support_type = [CodeType.STOCK, CodeType.FUND, CodeType.INDEX]
         self.__prepare_data()
+    
+    def get_name(self):
+        if not os.path.exists(json_filepath):
+            return None
+        inst = MyJson(code=self.code, codetype=self.codetype)
+        name = inst.get_name()
+        return name
     
     def get_raw_data(self) -> pd.DataFrame:
         filepath = super().get_filepath()
@@ -210,10 +254,15 @@ class Analyze(UpdateCode):
         data = self.data
         data_week = data.tail(5)
         data_month = data.tail(30)
-        fig = plt.figure() 
+        fig = plt.figure()
         fig.subplots_adjust(hspace=0.4, wspace=0.4)
         plt.rcParams["font.sans-serif"] = ["SimHei"]  # 设置字体
         plt.rcParams["axes.unicode_minus"] = False  # 该语句解决图像中的“-”负号的乱码问题
+        name = self.get_name()
+        if name:
+            title_text = f"{name}({self.code})"
+        else:
+            title_text = f"{self.code}"
         
         def get_time_info(time_start, time_end):
             s = time_start.strftime("%Y/%m/%d")
@@ -224,68 +273,74 @@ class Analyze(UpdateCode):
             ax = plt.subplot(212)
             ax.text(0.02, 0.9, c="b", s=get_time_info(data["日期"].iloc[0], data["日期"].iloc[-1]),
                     transform=ax.transAxes)
-            plt.title(f"{self.code}", color="k")
+            plt.title(title_text, color="k")
             plt.plot(data["日期"], data["收盘"], color="b")
-
+            
             ax = plt.subplot(221)
             ax.xaxis.set_major_formatter(dates.DateFormatter("%d"))
             ax.xaxis.set_major_locator(dates.DayLocator(interval=1))
             ax.text(0.04, 0.9, c="b", s=get_time_info(data_week["日期"].iloc[0], data_week["日期"].iloc[-1]),
                     transform=ax.transAxes)
-            plt.title(f"{self.code}", color="k")
+            plt.title(title_text, color="k")
             plt.plot(data_week["日期"], data_week["收盘"], color="r")
-
+            
             ax = plt.subplot(222)
             ax.xaxis.set_major_formatter(dates.DateFormatter("%m/%d"))
             ax.xaxis.set_major_locator(dates.DayLocator(interval=10))
             ax.text(0.05, 0.9, c="b", s=get_time_info(data_month["日期"].iloc[0], data_month["日期"].iloc[-1]),
                     transform=ax.transAxes)
-            plt.title(f"{self.code}", color="k")
+            plt.title(title_text, color="k")
             plt.plot(data_month["日期"], data_month["收盘"], color="r")
         elif self.codetype == CodeType.FUND:
             ax = plt.subplot(212)
             ax.text(0.02, 0.9, c="b", s=get_time_info(data["净值日期"].iloc[0], data["净值日期"].iloc[-1]),
                     transform=ax.transAxes)
-            plt.title(f"{self.code}", color="k")
+            plt.title(title_text, color="k")
             plt.plot(data["净值日期"], data["单位净值"], color="b")
-
+            
             ax = plt.subplot(221)
             ax.xaxis.set_major_formatter(dates.DateFormatter("%d"))
             ax.xaxis.set_major_locator(dates.DayLocator(interval=1))
             ax.text(0.04, 0.9, c="b", s=get_time_info(data_week["净值日期"].iloc[0], data_week["净值日期"].iloc[-1]),
                     transform=ax.transAxes)
-            plt.title(f"{self.code}", color="k")
+            plt.title(title_text, color="k")
             plt.plot(data_week["净值日期"], data_week["单位净值"], color="r")
-
+            
             ax = plt.subplot(222)
             ax.xaxis.set_major_formatter(dates.DateFormatter("%m/%d"))
             ax.xaxis.set_major_locator(dates.DayLocator(interval=10))
             ax.text(0.05, 0.9, c="b", s=get_time_info(data_month["净值日期"].iloc[0], data_month["净值日期"].iloc[-1]),
                     transform=ax.transAxes)
-            plt.title(f"{self.code}", color="k")
+            plt.title(title_text, color="k")
             plt.plot(data_month["净值日期"], data_month["单位净值"], color="r")
         elif self.codetype == CodeType.INDEX:
             ax = plt.subplot(212)
-            ax.text(0.02, 0.9, c="b", s=get_time_info(data["date"].iloc[0], data["date"].iloc[-1]), transform=ax.transAxes)
-            plt.title(f"{self.code}", color="k")
+            ax.text(0.02, 0.9, c="b", s=get_time_info(data["date"].iloc[0], data["date"].iloc[-1]),
+                    transform=ax.transAxes)
+            plt.title(title_text, color="k")
             plt.plot(data["date"], data["close"], color="b")
             
             ax = plt.subplot(221)
             ax.xaxis.set_major_formatter(dates.DateFormatter("%d"))
             ax.xaxis.set_major_locator(dates.DayLocator(interval=1))
-            ax.text(0.04, 0.9, c="b", s=get_time_info(data_week["date"].iloc[0], data_week["date"].iloc[-1]), transform=ax.transAxes)
-            plt.title(f"{self.code}", color="k")
+            ax.text(0.04, 0.9, c="b", s=get_time_info(data_week["date"].iloc[0], data_week["date"].iloc[-1]),
+                    transform=ax.transAxes)
+            plt.title(title_text, color="k")
             plt.plot(data_week["date"], data_week["close"], color="r")
             
             ax = plt.subplot(222)
             ax.xaxis.set_major_formatter(dates.DateFormatter("%m/%d"))
             ax.xaxis.set_major_locator(dates.DayLocator(interval=10))
-            ax.text(0.05, 0.9, c="b", s=get_time_info(data_month["date"].iloc[0], data_month["date"].iloc[-1]), transform=ax.transAxes)
-            plt.title(f"{self.code}", color="k")
+            ax.text(0.05, 0.9, c="b", s=get_time_info(data_month["date"].iloc[0], data_month["date"].iloc[-1]),
+                    transform=ax.transAxes)
+            plt.title(title_text, color="k")
             plt.plot(data_month["date"], data_month["close"], color="r")
         else:
             raise f"support codetype is {self.support_type}"
-        image_name = f"{self.codetype.value[1]}{self.code}.jpg"
+        if name:
+            image_name = f"{self.code}__{name}.jpg"
+        else:
+            image_name = f"{self.code}__{self.codetype.value[1]}.jpg"
         image_path = os.path.join(save_path_image, image_name)
         if not os.path.exists(save_path_image):
             os.mkdir(save_path_image)
