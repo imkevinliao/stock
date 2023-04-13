@@ -55,7 +55,7 @@ def get_stock() -> dict:
 
 
 def gen_json(code_dict: dict):
-    with open(json_filename, "w", encoding="utf-8") as f:
+    with open(json_filepath, "w", encoding="utf-8") as f:
         json_str = json.dumps(code_dict, indent=4, ensure_ascii=False)
         f.write(json_str)
 
