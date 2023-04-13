@@ -16,4 +16,5 @@ current_day = time.strftime("%Y%m%d", time.localtime())
 current_hour = time.localtime().tm_hour
 current_min = time.localtime().tm_min
 
+json_source_path = join(basedir, "code")
 json_filename = "code.json"
