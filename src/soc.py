@@ -138,6 +138,17 @@ class MyJson:
             content = json.loads(f.read())
         return content
     
+    def get_index_code(self):
+        symbol_code = self.code
+        if self.codetype != CodeType.INDEX:
+            return symbol_code
+        content = self.get_content()["index"]
+        for key, value in content.items():
+            if self.code in key:
+                symbol_code = key
+                break
+        return symbol_code
+    
     def get_name(self):
         content = self.get_content()
         stock = content["stock"]
@@ -165,7 +176,10 @@ class MyJson:
 class Analyze(UpdateCode):
     def __init__(self, code: str, codetype: CodeType):
         super().__init__(code, codetype)
-        self.code = code
+        if self.codetype == CodeType.INDEX:
+            self.code = MyJson(code, codetype).get_index_code()
+        else:
+            self.code = code
         self.codetype = codetype
         self.data = pd.DataFrame
         self.time = ("19700101", "22220101")
