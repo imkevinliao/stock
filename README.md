@@ -21,13 +21,13 @@ soc_down.py:
 生成行业历史资金流
 ```
 # 要求
-1. 安装 Python （Python版本需要大于3.6）
-2. 安装依赖的库 pip install -r requirements.txt
+1. Python > 3.6
+2. pip install -r requirements.txt
 
 # 致谢
 感谢Akshare提供的数据接口
 
-# 实用小工具 
+# 实用工具 
 [计算本金利率收益](./tool/calc.py)
 
 [计算个人所得税](./tool/tax.py)
