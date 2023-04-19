@@ -264,10 +264,24 @@ class Analyze(UpdateCode):
         print(f"during:({s_date},{e_date}) has records {all_records}.")
         print(f"price > {compare_price} has records:{up_compare_price_records}")
     
-    def plot(self):
+    def plot(self, data_counts=30):
         data = self.data
-        data_week = data.tail(5)
-        data_month = data.tail(30)
+        user_data = data.tail(data_counts)
+        if data_counts <= 7:
+            formatter = dates.DateFormatter("%d")
+            user_interval = dates.DayLocator(interval=1)
+        elif data_counts <= 30:
+            formatter = dates.DateFormatter("%d")
+            user_interval = dates.DayLocator(interval=7)
+        elif data_counts <= 180:
+            formatter = dates.DateFormatter("%m")
+            user_interval = dates.MonthLocator(interval=1)
+        elif data_counts <= 365:
+            formatter = dates.DateFormatter("%m")
+            user_interval = dates.MonthLocator(interval=3)
+        else:
+            formatter = dates.DateFormatter("%Y")
+            user_interval = dates.YearLocator()
         fig = plt.figure()
         fig.subplots_adjust(hspace=0.4, wspace=0.4)
         plt.rcParams["font.sans-serif"] = ["SimHei"]  # 设置字体
@@ -281,7 +295,7 @@ class Analyze(UpdateCode):
         def get_time_info(time_start, time_end):
             s = time_start.strftime("%Y/%m/%d")
             e = time_end.strftime("%Y/%m/%d")
-            return f"{s}-{e}"
+            return f"{s} - {e}"
         
         if self.codetype == CodeType.STOCK:
             ax = plt.subplot(212)
@@ -289,66 +303,39 @@ class Analyze(UpdateCode):
                     transform=ax.transAxes)
             plt.title(title_text, color="k")
             plt.plot(data["日期"], data["收盘"], color="b")
-            
-            ax = plt.subplot(221)
-            ax.xaxis.set_major_formatter(dates.DateFormatter("%d"))
-            ax.xaxis.set_major_locator(dates.DayLocator(interval=1))
-            ax.text(0.04, 0.9, c="b", s=get_time_info(data_week["日期"].iloc[0], data_week["日期"].iloc[-1]),
+            ax = plt.subplot(211)
+            ax.xaxis.set_major_formatter(formatter)
+            ax.xaxis.set_major_locator(user_interval)
+            ax.text(0.04, 0.9, c="b", s=get_time_info(user_data["日期"].iloc[0], user_data["日期"].iloc[-1]),
                     transform=ax.transAxes)
             plt.title(title_text, color="k")
-            plt.plot(data_week["日期"], data_week["收盘"], color="r")
-            
-            ax = plt.subplot(222)
-            ax.xaxis.set_major_formatter(dates.DateFormatter("%m/%d"))
-            ax.xaxis.set_major_locator(dates.DayLocator(interval=10))
-            ax.text(0.05, 0.9, c="b", s=get_time_info(data_month["日期"].iloc[0], data_month["日期"].iloc[-1]),
-                    transform=ax.transAxes)
-            plt.title(title_text, color="k")
-            plt.plot(data_month["日期"], data_month["收盘"], color="r")
+            plt.plot(user_data["日期"], user_data["收盘"], color="r")
         elif self.codetype == CodeType.FUND:
             ax = plt.subplot(212)
             ax.text(0.02, 0.9, c="b", s=get_time_info(data["净值日期"].iloc[0], data["净值日期"].iloc[-1]),
                     transform=ax.transAxes)
             plt.title(title_text, color="k")
             plt.plot(data["净值日期"], data["单位净值"], color="b")
-            
-            ax = plt.subplot(221)
-            ax.xaxis.set_major_formatter(dates.DateFormatter("%d"))
-            ax.xaxis.set_major_locator(dates.DayLocator(interval=1))
-            ax.text(0.04, 0.9, c="b", s=get_time_info(data_week["净值日期"].iloc[0], data_week["净值日期"].iloc[-1]),
+            ax = plt.subplot(211)
+            ax.xaxis.set_major_formatter(formatter)
+            ax.xaxis.set_major_locator(user_interval)
+            ax.text(0.04, 0.9, c="b", s=get_time_info(user_data["净值日期"].iloc[0], user_data["净值日期"].iloc[-1]),
                     transform=ax.transAxes)
             plt.title(title_text, color="k")
-            plt.plot(data_week["净值日期"], data_week["单位净值"], color="r")
-            
-            ax = plt.subplot(222)
-            ax.xaxis.set_major_formatter(dates.DateFormatter("%m/%d"))
-            ax.xaxis.set_major_locator(dates.DayLocator(interval=10))
-            ax.text(0.05, 0.9, c="b", s=get_time_info(data_month["净值日期"].iloc[0], data_month["净值日期"].iloc[-1]),
-                    transform=ax.transAxes)
-            plt.title(title_text, color="k")
-            plt.plot(data_month["净值日期"], data_month["单位净值"], color="r")
+            plt.plot(user_data["净值日期"], user_data["单位净值"], color="r")
         elif self.codetype == CodeType.INDEX:
             ax = plt.subplot(212)
             ax.text(0.02, 0.9, c="b", s=get_time_info(data["date"].iloc[0], data["date"].iloc[-1]),
                     transform=ax.transAxes)
             plt.title(title_text, color="k")
             plt.plot(data["date"], data["close"], color="b")
-            
-            ax = plt.subplot(221)
-            ax.xaxis.set_major_formatter(dates.DateFormatter("%d"))
-            ax.xaxis.set_major_locator(dates.DayLocator(interval=1))
-            ax.text(0.04, 0.9, c="b", s=get_time_info(data_week["date"].iloc[0], data_week["date"].iloc[-1]),
+            ax = plt.subplot(211)
+            ax.xaxis.set_major_formatter(formatter)
+            ax.xaxis.set_major_locator(user_interval)
+            ax.text(0.04, 0.9, c="b", s=get_time_info(user_data["date"].iloc[0], user_data["date"].iloc[-1]),
                     transform=ax.transAxes)
             plt.title(title_text, color="k")
-            plt.plot(data_week["date"], data_week["close"], color="r")
-            
-            ax = plt.subplot(222)
-            ax.xaxis.set_major_formatter(dates.DateFormatter("%m/%d"))
-            ax.xaxis.set_major_locator(dates.DayLocator(interval=10))
-            ax.text(0.05, 0.9, c="b", s=get_time_info(data_month["date"].iloc[0], data_month["date"].iloc[-1]),
-                    transform=ax.transAxes)
-            plt.title(title_text, color="k")
-            plt.plot(data_month["date"], data_month["close"], color="r")
+            plt.plot(user_data["date"], user_data["close"], color="r")
         else:
             raise f"support codetype is {self.support_type}"
         if name:
