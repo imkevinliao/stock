@@ -1,7 +1,11 @@
 import calendar
 import math
 from datetime import datetime, timedelta
+
 from enum import Enum
+from operator import itemgetter
+
+import chinese_calendar as cc
 
 
 class Week(Enum):
@@ -72,6 +76,15 @@ def demo_use_standard_library():
     print(f"{month}月份要求工时:{r_time}")
 
 
+def get_dates(_year, _month) -> list:
+    """获取某个月份的所有日期 datetime格式"""
+    _, month_days = calendar.monthrange(_year, _month)
+    s_date = datetime(_year, _month, 1)
+    e_date = datetime(_year, _month, month_days)
+    _dates = [(s_date + timedelta(idx)).date() for idx in range((e_date - s_date).days + 1)]
+    return _dates
+
+
 def calc_workday(year=None, month=None, day=None):
     try:
         import chinese_calendar as cc
@@ -82,12 +95,12 @@ def calc_workday(year=None, month=None, day=None):
     month = current.month if not month else month
     day = current.day if not day else day
     current_user = datetime(year=year, month=month, day=day)
-    
+
     month_days = calendar.monthrange(year, month)[1]
     s_date, e_date = tuple2time((year, month, 1), (year, month, month_days))
     all_days = [s_date + timedelta(idx + 0) for idx in range((e_date - s_date).days + 1)]
     all_date = [i.date() for i in all_days]
-    
+
     # 当天不计入，计算本月当天之前的工作天数和休息天数
     count_current_workday = 0
     count_current_weekday = 0
@@ -97,7 +110,7 @@ def calc_workday(year=None, month=None, day=None):
                 count_current_workday = count_current_workday + 1
             else:
                 count_current_weekday = count_current_weekday + 1
-    
+
     count_month_workday = 0
     count_month_weekday = 0
     for day in all_days:
@@ -105,7 +118,7 @@ def calc_workday(year=None, month=None, day=None):
             count_month_workday = count_month_workday + 1
         else:
             count_month_weekday = count_month_weekday + 1
-    
+
     return count_month_workday, count_month_weekday, count_current_workday, count_current_weekday
 
 
@@ -118,34 +131,37 @@ def demo_use_third_library():
 
 
 if __name__ == '__main__':
-    """
-    使用标准库函数无法准确判别节假日这类情况，所以使用第三方库 chinesecalendar 判断是否为工作日，这种计算更为准确但是需要先安装第三方库.
-    """
-    # 可以手动指定当前是哪一天，不指定默认是程序运行当天
-    month_workday, month_weekday, current_workday, current_weekday = calc_workday(month=None, day=None)
-    # 月平均工时要求
-    month_average_hours = 9
-    # 已经完成的工时和剩余工时(手动填写当前工时数)
-    completed_work_hours = 0
-    
-    month_work_hours = month_workday * month_average_hours
-    current_work_hours = current_workday * month_work_hours
-    
-    completed_workday = current_workday
-    remaining_workday = month_workday - current_workday
-    
-    remaining_work_hours = month_work_hours - completed_work_hours
-    # 计算接下来为了完成工时，需要每天工作多久：剩余工作时间/剩余工作天数
-    next_day_hours = remaining_work_hours / (month_workday - current_workday)
-    
-    # 假定晚上19点下班，当天工时计为8小时
-    base_time = [19, 8]
-    off_duty = next_day_hours - base_time[1] + base_time[0]
-    if off_duty > 24:
-        print(f"没救了，工时补不回来的")
-    if off_duty < 0:
-        print(f"没救了，工时太多了，新时代卷王，加班狂魔.")
-    minutes, hours = math.modf(off_duty)
-    minutes = int(minutes * 60)
-    hours = int(hours)
-    print(f"您的下班时间为 {hours}:{minutes}")
+    dates = get_dates(2023, 5)
+    enum_workday = []
+    enum_weekend = []
+    for date in dates:
+        day = date.day
+        if cc.is_workday(date):
+            enum_workday.append(day)
+        else:
+            enum_weekend.append(day)
+    current_date = datetime.now().date()
+    count_worked_days = 0
+    count_off_days = 0
+    for date in dates:
+        if cc.is_workday(date) and (date < current_date):
+            count_worked_days += 1
+        elif cc.is_holiday(date) and (date < current_date):
+            count_off_days += 1
+    print(f"已经工作天数:{count_worked_days}\n剩余工作天数:{len(enum_workday) - count_worked_days}(含今天)")
+    print(f"已经休息天数:{count_off_days}\n剩余休息天数:{len(enum_weekend) - count_off_days}(含今天)")
+    stand_timesheet = len(enum_workday) * 8
+    fact_timesheet = len(enum_workday) * 8.5
+    print(f"本月标准工时{stand_timesheet},本月实际标准工时{fact_timesheet}")
+
+    current_timesheet = 97.065 + 12
+    remain_time = fact_timesheet - current_timesheet
+    remain_days = len(enum_workday) - count_worked_days
+
+    value = []
+    for i in range(1, remain_days + 1):
+        j = remain_days - i
+        if i * 7 + j * 12 > remain_time:
+            value.append([i, j])
+    value.sort(key=itemgetter(1))
+    print(f"最优解：工作7小时天数{value[0][0]}，工作12小时天数{value[0][1]}")
