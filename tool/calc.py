@@ -75,6 +75,63 @@ def calc(capital=None, year_rate=None, day_rate=None, year_gain=None, day_gain=N
     print(f"年收益：{year_gain:0.02f}，日收益：{day_gain:0.04f}")
 
 
+
+
+def exchange(amount=10000, broker_rate=0.25 * 0.001, transfer_rate=0.02 * 0.001, stamp_duty=0.001):
+    # 单次交易成本 2w以内手续费5￥
+    broker_cost = amount * broker_rate
+    transfer_cost = amount * transfer_rate
+    buy_cost = broker_cost + transfer_cost
+    
+    broker_cost = amount * broker_rate
+    if broker_cost < 5:
+        broker_cost = 5
+    transfer_cost = amount * transfer_rate
+    stamp_cost = amount * stamp_duty
+    sell_cost = broker_cost + transfer_cost + stamp_cost
+    
+    buy_sell_cost = buy_cost + sell_cost
+    return round(buy_sell_cost, 2)
+
+def cost(amount, in_price, out_price):
+    # 股票交易，金额，买入价格，卖出价格
+    earn = amount * ((out_price - in_price) / in_price)
+    cost_must = exchange(amount)
+    earn = earn - cost_must
+    return earn
+
+
+def compound_interest():  # 复利投资
+    months = 12
+    init_amount = 5 * 10000
+    invest_per_month = 3 * 1000
+    year_rate = 3 * 0.01
+    invest_years = 10
+    month_rate = year_rate / months
+    
+    # 本金复利计算
+    gain1 = init_amount * (1 + month_rate) ** (months * invest_years)
+    cost1 = init_amount
+    # 定投计算
+    gain2 = invest_per_month * (1 + month_rate) * (-1 + (1 + month_rate) ** (months * invest_years)) / month_rate
+    cost2 = invest_per_month * months * invest_years
+    
+    print(
+        f"基本信息:\n初始资金:{init_amount / 10000}万,年化收益利率{year_rate},每月定投:{invest_per_month / 1000}千,投资时间{invest_years}年")
+    
+    print(f"本金收益:{int(gain1 - cost1) / 10000}万,收益率:{(gain1 - cost1) / cost1:0.3}")
+    print(f"定投收益:{int(gain2 - cost2) / 10000}万,收益率:{(gain2 - cost2) / cost2:0.3}")
+    print(
+        f"综合收益:{int(gain2 + gain1 - cost1 - cost2) / 10000}万,综合成本:{int(cost1 + cost2) / 10000}万,综合收益率:{int(gain1 + gain2 - cost1 - cost2) / (cost1 + cost2):0.3}")
+    
+    """
+    基本信息:
+    初始资金:5.0万,年化收益利率0.03,每月定投:3.0千,投资时间10年
+    本金收益:1.7467万,收益率:0.349
+    定投收益:6.0272万,收益率:0.167
+    综合收益:7.7739万,综合成本:41.0万,综合收益率:0.19
+    """
+    
 if __name__ == '__main__':
     in_data = (None, 0.029, None, 12000, None)
     calc(capital=in_data[0], year_rate=in_data[1], day_rate=in_data[2], year_gain=in_data[3], day_gain=in_data[4])
