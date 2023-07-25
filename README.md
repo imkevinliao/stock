@@ -31,5 +31,3 @@ soc_down.py:
 [计算本金利率收益](./tool/calc.py)
 
 [计算个人所得税](./tool/tax.py)
-
-[计算每月工时及下班时间](./tool/worktime.py)
